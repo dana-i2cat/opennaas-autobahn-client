@@ -13,7 +13,7 @@ import javax.xml.xpath.XPathException;
  * @author Isart Canyameres Gimenez (i2cat)
  * 
  */
-public class WSSecurityLoader {
+public class WSSecurityLoader implements IWSSecurityFactory {
 
 	public static final String	PROPERTY_ACTIVATED	= "net.geant.autobahn.security.activated";
 	public static final String	PROPERTY_ENCRYPT	= "net.geant.autobahn.edugain.encrypt";
