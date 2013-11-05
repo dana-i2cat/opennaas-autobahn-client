@@ -38,22 +38,23 @@ import org.w3c.dom.NodeList;
  */
 public class WSSecurity {
 
-	private static final Log	log						= LogFactory.getLog(WSSecurity.class);
+	private static final Log			log						= LogFactory.getLog(WSSecurity.class);
 
-	public static final int		DEFAULT_TIMEOUT			= 1200 * 1000;
+	public static final int				DEFAULT_TIMEOUT			= 1200 * 1000;
 
-	public final String			PROPERTY_ACTIVATED		= "net.geant.autobahn.security.activated";
-	public final String			PROPERTY_ENCRYPT		= "net.geant.autobahn.edugain.encrypt";
-	public final String			PROPERTY_TIMESTAMP		= "net.geant.autobahn.edugain.timestamp";
-	public final String			PROPERTY_EDUGAIN		= "net.geant.autobahn.edugain.activated";
-	public final String			PROPERTY_USER			= "org.apache.ws.security.crypto.merlin.keystore.alias";
-	public final String			WSS_X509_TOKENPROFILE	= "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
+	public final String					PROPERTY_ACTIVATED		= "net.geant.autobahn.security.activated";
+	public final String					PROPERTY_ENCRYPT		= "net.geant.autobahn.edugain.encrypt";
+	public final String					PROPERTY_TIMESTAMP		= "net.geant.autobahn.edugain.timestamp";
+	public final String					PROPERTY_EDUGAIN		= "net.geant.autobahn.edugain.activated";
+	public final String					PROPERTY_USER			= "org.apache.ws.security.crypto.merlin.keystore.alias";
+	public final String					WSS_X509_TOKENPROFILE	= "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
 
-	private URL					edugain, securityUrl;
-	private String				activatedStr, timestampStr, encryptStr, edugainAct, securityUser;
-	private XPathExpression		xpath;
+	private URL							edugain, securityUrl;
+	private String						activatedStr, timestampStr, encryptStr, edugainAct, securityUser;
+	private XPathExpression				xpath;
 
-	private Properties			wss4jProperties;
+	private Properties					wss4jProperties;
+	private SecurityPasswordCallback	securityPassword;
 
 	/**
 	 * @throws XPathException
@@ -81,6 +82,8 @@ public class WSSecurity {
 
 		this.wss4jProperties = readPropertiesFromUrl(wss4jPropsUrl);
 		loadSecurityOptions(readPropertiesFromUrl(securityUrl));
+
+		securityPassword = new SecurityPasswordCallback(securityUrl);
 	}
 
 	/**
@@ -232,7 +235,6 @@ public class WSSecurity {
 		Map<String, Object> in = new HashMap<String, Object>();
 		Map<String, Object> out = new HashMap<String, Object>();
 
-		SecurityPasswordCallback securityPassword = new SecurityPasswordCallback(securityUrl);
 		String securityMethods = calculateSecurityMethodsFromOptions();
 
 		// Encrypt the SOAP body
