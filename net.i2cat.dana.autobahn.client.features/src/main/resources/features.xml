@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0">
+	
+	<repository>mvn:org.apache.karaf.assemblies.features/standard/${karaf.version}/xml/features</repository>
+	<repository>mvn:org.apache.cxf.karaf/apache-cxf/${cxf.version}/xml/features</repository>
+	
+	<feature name="autobahn-client" version="${project.version}">
+		<feature version="${cxf.version}">cxf</feature>
+		<bundle>mvn:net.i2cat.dana/autobahn.api/${autobahn.api.version}</bundle>
+		<bundle>mvn:net.i2cat.dana/autobahn.client/${project.version}</bundle>
+	</feature>
+</features>

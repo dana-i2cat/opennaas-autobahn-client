@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>net.i2cat.dana</groupId>
+	<artifactId>autobahn-client</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>AutoBAHN client</name>
+	<packaging>pom</packaging>
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<autobahn.api.version>3.1342009.104000</autobahn.api.version>
+		<commons.logging.version>1.1.1</commons.logging.version>
+		<cxf.version>2.7.5</cxf.version>
+		<junit.version>4.10</junit.version>
+	</properties>
+	
+	<dependencyManagement>
+		<dependencies>
+			<!-- Our own modules -->
+			<dependency>
+				<groupId>net.i2cat.dana</groupId>
+				<artifactId>autobahn.api</artifactId>
+				<version>${autobahn.api.version}</version>
+			</dependency>
+			<!-- Web Services -->
+			<dependency>
+				<groupId>org.apache.cxf</groupId>
+				<artifactId>cxf-bundle</artifactId>
+				<version>${cxf.version}</version>
+			</dependency>
+			<!-- Logging -->
+			<dependency>
+				<groupId>commons-logging</groupId>
+				<artifactId>commons-logging</artifactId>
+				<version>${commons.logging.version}</version>
+			</dependency>
+			<!-- Unit tests -->
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+				<scope>test</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<modules>
+		<module>net.i2cat.dana.autobahn.api</module>
+		<module>net.i2cat.dana.autobahn.client</module>
+		<module>net.i2cat.dana.autobahn.client.features</module>
+	</modules>
+</project>
