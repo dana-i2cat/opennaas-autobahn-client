@@ -3,4 +3,9 @@
 	<bean id="autobahn-client-factory" class="net.i2cat.dana.autobahn.client.AutobahnClientFactory" />
 	<service ref="autobahn-client-factory"
 		interface="net.i2cat.dana.autobahn.client.IAutobahnClientFactory" />
+		
+	<bean id="wssec-factory" class="net.i2cat.dana.autobahn.client.security.WSSecurityLoader" />
+	<service ref="wssec-factory"
+		interface="net.i2cat.dana.autobahn.client.security.IWSSecurityFactory" />
+		
 </blueprint>
