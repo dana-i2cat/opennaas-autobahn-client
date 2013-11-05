@@ -80,38 +80,6 @@ public class WSSecurity {
 		loadSecurityOptions(securityUrl);
 	}
 
-	// /**
-	// * @return
-	// */
-	// public Properties convertFileToProps() {
-	//
-	// Properties props = new Properties();
-	// String key = "org.apache.ws.security.crypto.merlin.file";
-	//
-	// try {
-	// props.load(WSS4J_PROPS.openStream());
-	// } catch (Exception e) {
-	// log.debug("Error in converting properties file to properties object. "
-	// + e.getMessage());
-	// }
-	//
-	// //FIXME What is the purpose of this if?
-	// if (props.getProperty(key) != null) {
-	//
-	// String s = props.getProperty(key);
-	// props.setProperty(key, s);
-	// }
-	//
-	// return props;
-	// }
-
-	private Properties readPropertiesFromUrl(URL propertiesUrl) throws IOException {
-
-		Properties props = new Properties();
-		props.load(propertiesUrl.openStream());
-		return props;
-	}
-
 	/**
 	 * @return the activatedStr
 	 */
@@ -165,6 +133,15 @@ public class WSSecurity {
 	}
 
 	/**
+	 * Returns the string variable that shows if Edugain validation should be enabled or not
+	 * 
+	 * @return String
+	 */
+	public String getEdugainActive() {
+		return this.edugainAct;
+	}
+
+	/**
 	 * @param edugainAct
 	 *            the edugainAct to set
 	 */
@@ -199,79 +176,6 @@ public class WSSecurity {
 		policy.setReceiveTimeout(millis);
 		policy.setAllowChunking(false);
 		http.setClient(policy);
-	}
-
-	/**
-	 * Reads the edugain property file and creates a String that represents the security methods that will be used (Signature, Timestamp, Encryption)
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public String readProperties() throws IOException {
-		loadSecurityOptions(securityUrl);
-		return calculateSecurityMethodsFromOptions();
-	}
-
-	/**
-	 * Reads security options from properties at given URL and populates this class internal fields accordingly.
-	 * 
-	 * @param securityConfigurationURL
-	 * @throws IOException
-	 */
-	private void loadSecurityOptions(URL securityConfigurationURL) throws IOException {
-
-		Properties securityProps = new Properties();
-
-		try {
-			securityProps.load(securityConfigurationURL.openStream());
-
-			activatedStr = securityProps.getProperty(PROPERTY_ACTIVATED);
-			timestampStr = securityProps.getProperty(PROPERTY_TIMESTAMP);
-			encryptStr = securityProps.getProperty(PROPERTY_ENCRYPT);
-			edugainAct = securityProps.getProperty(PROPERTY_EDUGAIN);
-			securityUser = securityProps.getProperty(PROPERTY_USER);
-
-		} catch (IOException e) {
-			throw new IOException("Couldn't load client properties", e);
-		}
-	}
-
-	/**
-	 * Creates a String that represents the security methods that will be used (Signature, Timestamp, Encryption)
-	 * 
-	 * @return
-	 */
-	private String calculateSecurityMethodsFromOptions() {
-
-		String securityMethods;
-
-		if (activatedStr != null && "true".equalsIgnoreCase(activatedStr)) {
-
-			securityMethods = "Signature";
-
-			if (timestampStr != null && "true".equalsIgnoreCase(timestampStr)) {
-
-				securityMethods += " Timestamp";
-			}
-
-			if (encryptStr != null && "true".equalsIgnoreCase(encryptStr)) {
-
-				securityMethods += " Encrypt";
-			}
-
-		} else
-			securityMethods = "NoSecurity";
-
-		return securityMethods;
-	}
-
-	/**
-	 * Returns the string variable that shows if Edugain validation should be enabled or not
-	 * 
-	 * @return String
-	 */
-	public String getEdugainActive() {
-		return this.edugainAct;
 	}
 
 	/**
@@ -366,15 +270,6 @@ public class WSSecurity {
 		}
 	}
 
-	private XPathExpression compileXpathExpression()
-			throws XPathExpressionException {
-
-		XPathFactory factory = XPathFactory.newInstance();
-		XPath xpath = factory.newXPath();
-		xpath.setNamespaceContext(new WSSENamespaceContext());
-		return xpath.compile("//wsse:BinarySecurityToken");
-	}
-
 	public String extractBstFromSoapEnvelope(Document doc)
 			throws XPathException, SecurityTokenNotFoundException {
 
@@ -389,6 +284,74 @@ public class WSSecurity {
 			}
 		}
 		throw new SecurityTokenNotFoundException();
+	}
+
+	private XPathExpression compileXpathExpression()
+			throws XPathExpressionException {
+
+		XPathFactory factory = XPathFactory.newInstance();
+		XPath xpath = factory.newXPath();
+		xpath.setNamespaceContext(new WSSENamespaceContext());
+		return xpath.compile("//wsse:BinarySecurityToken");
+	}
+
+	/**
+	 * Reads security options from properties at given URL and populates this class internal fields accordingly.
+	 * 
+	 * @param securityConfigurationURL
+	 * @throws IOException
+	 */
+	private void loadSecurityOptions(URL securityConfigurationURL) throws IOException {
+
+		Properties securityProps;
+		try {
+			securityProps = readPropertiesFromUrl(securityConfigurationURL);
+
+			activatedStr = securityProps.getProperty(PROPERTY_ACTIVATED);
+			timestampStr = securityProps.getProperty(PROPERTY_TIMESTAMP);
+			encryptStr = securityProps.getProperty(PROPERTY_ENCRYPT);
+			edugainAct = securityProps.getProperty(PROPERTY_EDUGAIN);
+			securityUser = securityProps.getProperty(PROPERTY_USER);
+
+		} catch (IOException e) {
+			throw new IOException("Couldn't load client properties", e);
+		}
+	}
+
+	private Properties readPropertiesFromUrl(URL propertiesUrl) throws IOException {
+
+		Properties props = new Properties();
+		props.load(propertiesUrl.openStream());
+		return props;
+	}
+
+	/**
+	 * Creates a String that represents the security methods that will be used (Signature, Timestamp, Encryption)
+	 * 
+	 * @return
+	 */
+	private String calculateSecurityMethodsFromOptions() {
+
+		String securityMethods;
+
+		if (activatedStr != null && "true".equalsIgnoreCase(activatedStr)) {
+
+			securityMethods = "Signature";
+
+			if (timestampStr != null && "true".equalsIgnoreCase(timestampStr)) {
+
+				securityMethods += " Timestamp";
+			}
+
+			if (encryptStr != null && "true".equalsIgnoreCase(encryptStr)) {
+
+				securityMethods += " Encrypt";
+			}
+
+		} else
+			securityMethods = "NoSecurity";
+
+		return securityMethods;
 	}
 
 	/**
