@@ -49,9 +49,11 @@ public class WSSecurity {
 	public final String			PROPERTY_USER			= "org.apache.ws.security.crypto.merlin.keystore.alias";
 	public final String			WSS_X509_TOKENPROFILE	= "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
 
-	private URL					WSS4J_PROPS, edugain, securityUrl;
+	private URL					edugain, securityUrl;
 	private String				activatedStr, timestampStr, encryptStr, edugainAct, securityUser;
 	private XPathExpression		xpath;
+
+	private Properties			wss4jProperties;
 
 	/**
 	 * @throws XPathException
@@ -72,12 +74,13 @@ public class WSSecurity {
 
 		this.edugain = securityLoader.getResource(commonPath + "/edugain/edugain.properties");
 		this.securityUrl = securityLoader.getResource(commonPath + "/security.properties");
-		this.WSS4J_PROPS = securityLoader.getResource(commonPath + "/security.properties");
+		URL wss4jPropsUrl = securityLoader.getResource(commonPath + "/security.properties");
 		// this.edugain = new File(commonPath + "/edugain/edugain.properties").toURI().toURL();
 		// this.securityUrl = new File(commonPath + "/security.properties").toURI().toURL();
 		// this.WSS4J_PROPS = new File(commonPath + "/security.properties").toURI().toURL();
 
-		loadSecurityOptions(securityUrl);
+		this.wss4jProperties = readPropertiesFromUrl(wss4jPropsUrl);
+		loadSecurityOptions(readPropertiesFromUrl(securityUrl));
 	}
 
 	/**
@@ -235,7 +238,7 @@ public class WSSecurity {
 		// Encrypt the SOAP body
 		String bodyPart = "{Content}{}Body";
 
-		out.put("properties", readPropertiesFromUrl(WSS4J_PROPS));
+		out.put("properties", wss4jProperties);
 		out.put(WSHandlerConstants.ENC_PROP_REF_ID, "properties");
 		out.put(WSHandlerConstants.SIG_PROP_REF_ID, "properties");
 		out.put(WSHandlerConstants.ACTION, securityMethods);
@@ -246,7 +249,7 @@ public class WSSecurity {
 		out.put(WSHandlerConstants.SIG_KEY_ID, "DirectReference");
 		out.put(WSHandlerConstants.ENCRYPTION_PARTS, bodyPart);
 
-		in.put("properties", readPropertiesFromUrl(WSS4J_PROPS));
+		in.put("properties", wss4jProperties);
 		in.put(WSHandlerConstants.ACTION, securityMethods);
 		in.put(WSHandlerConstants.PW_CALLBACK_REF, securityPassword);
 		in.put(WSHandlerConstants.DEC_PROP_REF_ID, "properties");
@@ -258,15 +261,15 @@ public class WSSecurity {
 		cxfEndpoint.getInInterceptors().add(wssIn);
 
 		if (!securityMethods.equals("NoSecurity") && edugainAct.equals("true")) {
-			/*
-			 * Properties edugainProps = new Properties(); edugainProps.load(edugain.openStream());
-			 * 
-			 * Edugain loader = new Edugain(edugain);
-			 * 
-			 * EdugainSupport edugainInInterceptor = new EdugainSupport(loader.getPropsLoaderForWGui(), edugainAct); EdugainSupport
-			 * edugainOutInterceptor = new EdugainSupport(loader.getPropsLoaderForWGui(), edugainAct);
-			 * cxfEndpoint.getInInterceptors().add(edugainInInterceptor); cxfEndpoint.getOutInterceptors().add(edugainOutInterceptor);
-			 */
+			// Properties edugainProps = new Properties();
+			// edugainProps.load(edugain.openStream());
+			//
+			// Edugain loader = new Edugain(edugain);
+			//
+			// EdugainSupport edugainInInterceptor = new EdugainSupport(loader.getPropsLoaderForWGui(), edugainAct);
+			// EdugainSupport edugainOutInterceptor = new EdugainSupport(loader.getPropsLoaderForWGui(), edugainAct);
+			// cxfEndpoint.getInInterceptors().add(edugainInInterceptor);
+			// cxfEndpoint.getOutInterceptors().add(edugainOutInterceptor);
 		}
 	}
 
@@ -296,26 +299,17 @@ public class WSSecurity {
 	}
 
 	/**
-	 * Reads security options from properties at given URL and populates this class internal fields accordingly.
+	 * Reads security options from given properties and populates this class internal fields accordingly.
 	 * 
 	 * @param securityConfigurationURL
 	 * @throws IOException
 	 */
-	private void loadSecurityOptions(URL securityConfigurationURL) throws IOException {
-
-		Properties securityProps;
-		try {
-			securityProps = readPropertiesFromUrl(securityConfigurationURL);
-
-			activatedStr = securityProps.getProperty(PROPERTY_ACTIVATED);
-			timestampStr = securityProps.getProperty(PROPERTY_TIMESTAMP);
-			encryptStr = securityProps.getProperty(PROPERTY_ENCRYPT);
-			edugainAct = securityProps.getProperty(PROPERTY_EDUGAIN);
-			securityUser = securityProps.getProperty(PROPERTY_USER);
-
-		} catch (IOException e) {
-			throw new IOException("Couldn't load client properties", e);
-		}
+	private void loadSecurityOptions(Properties securityProps) {
+		activatedStr = securityProps.getProperty(PROPERTY_ACTIVATED);
+		timestampStr = securityProps.getProperty(PROPERTY_TIMESTAMP);
+		encryptStr = securityProps.getProperty(PROPERTY_ENCRYPT);
+		edugainAct = securityProps.getProperty(PROPERTY_EDUGAIN);
+		securityUser = securityProps.getProperty(PROPERTY_USER);
 	}
 
 	private Properties readPropertiesFromUrl(URL propertiesUrl) throws IOException {
