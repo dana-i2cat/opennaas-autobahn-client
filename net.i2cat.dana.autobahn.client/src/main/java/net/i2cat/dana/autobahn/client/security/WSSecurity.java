@@ -2,7 +2,6 @@ package net.i2cat.dana.autobahn.client.security;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,7 +37,7 @@ import org.w3c.dom.NodeList;
  */
 public class WSSecurity {
 
-	private static final Log			log						= LogFactory.getLog(WSSecurity.class);
+	public static final Log				log						= LogFactory.getLog(WSSecurity.class);
 
 	public static final int				DEFAULT_TIMEOUT			= 1200 * 1000;
 
@@ -49,7 +48,6 @@ public class WSSecurity {
 	public final String					PROPERTY_USER			= "org.apache.ws.security.crypto.merlin.keystore.alias";
 	public final String					WSS_X509_TOKENPROFILE	= "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
 
-	private URL							edugain, securityUrl;
 	private String						activatedStr, timestampStr, encryptStr, edugainAct, securityUser;
 	private XPathExpression				xpath;
 
@@ -57,33 +55,12 @@ public class WSSecurity {
 	private SecurityPasswordCallback	securityPassword;
 
 	/**
+	 * Default constructor
+	 * 
 	 * @throws XPathException
 	 */
 	public WSSecurity() throws XPathException {
 		xpath = compileXpathExpression();
-	}
-
-	/**
-	 * @param commonPath
-	 * @throws XPathException
-	 * @throws IOException
-	 */
-	public WSSecurity(String commonPath) throws XPathException, IOException {
-
-		xpath = compileXpathExpression();
-		ClassLoader securityLoader = getClass().getClassLoader();
-
-		this.edugain = securityLoader.getResource(commonPath + "/edugain/edugain.properties");
-		this.securityUrl = securityLoader.getResource(commonPath + "/security.properties");
-		URL wss4jPropsUrl = securityLoader.getResource(commonPath + "/security.properties");
-		// this.edugain = new File(commonPath + "/edugain/edugain.properties").toURI().toURL();
-		// this.securityUrl = new File(commonPath + "/security.properties").toURI().toURL();
-		// this.WSS4J_PROPS = new File(commonPath + "/security.properties").toURI().toURL();
-
-		this.wss4jProperties = readPropertiesFromUrl(wss4jPropsUrl);
-		loadSecurityOptions(readPropertiesFromUrl(securityUrl));
-
-		securityPassword = new SecurityPasswordCallback(securityUrl);
 	}
 
 	/**
@@ -168,6 +145,36 @@ public class WSSecurity {
 	 */
 	public void setSecurityUser(String securityUser) {
 		this.securityUser = securityUser;
+	}
+
+	/**
+	 * @return the wss4jProperties
+	 */
+	public Properties getWss4jProperties() {
+		return wss4jProperties;
+	}
+
+	/**
+	 * @param wss4jProperties
+	 *            the wss4jProperties to set
+	 */
+	public void setWss4jProperties(Properties wss4jProperties) {
+		this.wss4jProperties = wss4jProperties;
+	}
+
+	/**
+	 * @return the securityPassword
+	 */
+	public SecurityPasswordCallback getSecurityPassword() {
+		return securityPassword;
+	}
+
+	/**
+	 * @param securityPassword
+	 *            the securityPassword to set
+	 */
+	public void setSecurityPassword(SecurityPasswordCallback securityPassword) {
+		this.securityPassword = securityPassword;
 	}
 
 	public static void setClientTimeout(Object clientInterface) {
@@ -298,27 +305,6 @@ public class WSSecurity {
 		XPath xpath = factory.newXPath();
 		xpath.setNamespaceContext(new WSSENamespaceContext());
 		return xpath.compile("//wsse:BinarySecurityToken");
-	}
-
-	/**
-	 * Reads security options from given properties and populates this class internal fields accordingly.
-	 * 
-	 * @param securityConfigurationURL
-	 * @throws IOException
-	 */
-	private void loadSecurityOptions(Properties securityProps) {
-		activatedStr = securityProps.getProperty(PROPERTY_ACTIVATED);
-		timestampStr = securityProps.getProperty(PROPERTY_TIMESTAMP);
-		encryptStr = securityProps.getProperty(PROPERTY_ENCRYPT);
-		edugainAct = securityProps.getProperty(PROPERTY_EDUGAIN);
-		securityUser = securityProps.getProperty(PROPERTY_USER);
-	}
-
-	private Properties readPropertiesFromUrl(URL propertiesUrl) throws IOException {
-
-		Properties props = new Properties();
-		props.load(propertiesUrl.openStream());
-		return props;
 	}
 
 	/**

@@ -14,6 +14,7 @@ import net.geant.autobahn.useraccesspoint.UserAccessPoint;
 import net.i2cat.dana.autobahn.client.AutobahnClient;
 import net.i2cat.dana.autobahn.client.AutobahnClientFactory;
 import net.i2cat.dana.autobahn.client.security.WSSecurity;
+import net.i2cat.dana.autobahn.client.security.WSSecurityLoader;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +31,7 @@ public class AutobahnClientTest {
 
 	@Before
 	public void initSecurity() throws XPathException, IOException {
-		security = new WSSecurity(SECURITY_CONFIG_PATH);
+		security = new WSSecurityLoader().createWSSecurity(SECURITY_CONFIG_PATH);
 	}
 
 	@Test
