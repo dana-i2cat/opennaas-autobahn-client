@@ -38,19 +38,20 @@ import org.w3c.dom.NodeList;
  */
 public class WSSecurity {
 
-	private final static Log	log						= LogFactory.getLog(WSSecurity.class);
-	private URL					WSS4J_PROPS;
-	private String				activatedStr, timestampStr, encryptStr, edugainAct, securityUser;
+	private static final Log	log						= LogFactory.getLog(WSSecurity.class);
+
+	public static final int		DEFAULT_TIMEOUT			= 1200 * 1000;
+
 	public final String			PROPERTY_ACTIVATED		= "net.geant.autobahn.security.activated";
 	public final String			PROPERTY_ENCRYPT		= "net.geant.autobahn.edugain.encrypt";
 	public final String			PROPERTY_TIMESTAMP		= "net.geant.autobahn.edugain.timestamp";
 	public final String			PROPERTY_EDUGAIN		= "net.geant.autobahn.edugain.activated";
 	public final String			PROPERTY_USER			= "org.apache.ws.security.crypto.merlin.keystore.alias";
 	public final String			WSS_X509_TOKENPROFILE	= "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
-	public static final int		DEFAULT_TIMEOUT			= 1200 * 1000;
-	public URL					edugain, securityUrl;
-	public String				security;
-	public XPathExpression		xpath;
+
+	private URL					WSS4J_PROPS, edugain, securityUrl;
+	private String				activatedStr, timestampStr, encryptStr, edugainAct, securityUser;
+	private XPathExpression		xpath;
 
 	/**
 	 * @throws XPathException
@@ -76,30 +77,38 @@ public class WSSecurity {
 		// this.securityUrl = new File(commonPath + "/security.properties").toURI().toURL();
 		// this.WSS4J_PROPS = new File(commonPath + "/security.properties").toURI().toURL();
 
-		readProperties();
+		loadSecurityOptions(securityUrl);
 	}
 
-	/**
-	 * @return
-	 */
-	public Properties convertFileToProps() {
+	// /**
+	// * @return
+	// */
+	// public Properties convertFileToProps() {
+	//
+	// Properties props = new Properties();
+	// String key = "org.apache.ws.security.crypto.merlin.file";
+	//
+	// try {
+	// props.load(WSS4J_PROPS.openStream());
+	// } catch (Exception e) {
+	// log.debug("Error in converting properties file to properties object. "
+	// + e.getMessage());
+	// }
+	//
+	// //FIXME What is the purpose of this if?
+	// if (props.getProperty(key) != null) {
+	//
+	// String s = props.getProperty(key);
+	// props.setProperty(key, s);
+	// }
+	//
+	// return props;
+	// }
+
+	private Properties readPropertiesFromUrl(URL propertiesUrl) throws IOException {
 
 		Properties props = new Properties();
-		String key = "org.apache.ws.security.crypto.merlin.file";
-
-		try {
-			props.load(WSS4J_PROPS.openStream());
-		} catch (Exception e) {
-			log.debug("Error in converting properties file to properties object. "
-					+ e.getMessage());
-		}
-
-		if (props.getProperty(key) != null) {
-
-			String s = props.getProperty(key);
-			props.setProperty(key, s);
-		}
-
+		props.load(propertiesUrl.openStream());
 		return props;
 	}
 
@@ -199,11 +208,22 @@ public class WSSecurity {
 	 * @throws IOException
 	 */
 	public String readProperties() throws IOException {
+		loadSecurityOptions(securityUrl);
+		return calculateSecurityMethodsFromOptions();
+	}
+
+	/**
+	 * Reads security options from properties at given URL and populates this class internal fields accordingly.
+	 * 
+	 * @param securityConfigurationURL
+	 * @throws IOException
+	 */
+	private void loadSecurityOptions(URL securityConfigurationURL) throws IOException {
 
 		Properties securityProps = new Properties();
 
 		try {
-			securityProps.load(securityUrl.openStream());
+			securityProps.load(securityConfigurationURL.openStream());
 
 			activatedStr = securityProps.getProperty(PROPERTY_ACTIVATED);
 			timestampStr = securityProps.getProperty(PROPERTY_TIMESTAMP);
@@ -212,28 +232,37 @@ public class WSSecurity {
 			securityUser = securityProps.getProperty(PROPERTY_USER);
 
 		} catch (IOException e) {
-			log.error("Couldn't load client properties: " + e.getMessage());
+			throw new IOException("Couldn't load client properties", e);
 		}
+	}
+
+	/**
+	 * Creates a String that represents the security methods that will be used (Signature, Timestamp, Encryption)
+	 * 
+	 * @return
+	 */
+	private String calculateSecurityMethodsFromOptions() {
+
+		String securityMethods;
 
 		if (activatedStr != null && "true".equalsIgnoreCase(activatedStr)) {
 
-			security = "Signature";
+			securityMethods = "Signature";
 
 			if (timestampStr != null && "true".equalsIgnoreCase(timestampStr)) {
 
-				security += " Timestamp";
+				securityMethods += " Timestamp";
 			}
 
 			if (encryptStr != null && "true".equalsIgnoreCase(encryptStr)) {
 
-				security += " Encrypt";
+				securityMethods += " Encrypt";
 			}
 
 		} else
-			security = "NoSecurity";
+			securityMethods = "NoSecurity";
 
-		return security;
-
+		return securityMethods;
 	}
 
 	/**
@@ -297,14 +326,15 @@ public class WSSecurity {
 		Map<String, Object> out = new HashMap<String, Object>();
 
 		SecurityPasswordCallback securityPassword = new SecurityPasswordCallback(securityUrl);
+		String securityMethods = calculateSecurityMethodsFromOptions();
 
 		// Encrypt the SOAP body
 		String bodyPart = "{Content}{}Body";
 
-		out.put("properties", convertFileToProps());
+		out.put("properties", readPropertiesFromUrl(WSS4J_PROPS));
 		out.put(WSHandlerConstants.ENC_PROP_REF_ID, "properties");
 		out.put(WSHandlerConstants.SIG_PROP_REF_ID, "properties");
-		out.put(WSHandlerConstants.ACTION, readProperties());
+		out.put(WSHandlerConstants.ACTION, securityMethods);
 		out.put(WSHandlerConstants.ENCRYPTION_USER, securityUser);
 		out.put(WSHandlerConstants.USER, securityUser);
 		out.put(WSHandlerConstants.PW_CALLBACK_REF, securityPassword);
@@ -312,8 +342,8 @@ public class WSSecurity {
 		out.put(WSHandlerConstants.SIG_KEY_ID, "DirectReference");
 		out.put(WSHandlerConstants.ENCRYPTION_PARTS, bodyPart);
 
-		in.put("properties", convertFileToProps());
-		in.put(WSHandlerConstants.ACTION, readProperties());
+		in.put("properties", readPropertiesFromUrl(WSS4J_PROPS));
+		in.put(WSHandlerConstants.ACTION, securityMethods);
 		in.put(WSHandlerConstants.PW_CALLBACK_REF, securityPassword);
 		in.put(WSHandlerConstants.DEC_PROP_REF_ID, "properties");
 		in.put(WSHandlerConstants.SIG_PROP_REF_ID, "properties");
@@ -323,7 +353,7 @@ public class WSSecurity {
 		WSS4JInInterceptor wssIn = new WSS4JInInterceptor(in);
 		cxfEndpoint.getInInterceptors().add(wssIn);
 
-		if (!security.equals("NoSecurity") && edugainAct.equals("true")) {
+		if (!securityMethods.equals("NoSecurity") && edugainAct.equals("true")) {
 			/*
 			 * Properties edugainProps = new Properties(); edugainProps.load(edugain.openStream());
 			 * 
